@@ -493,7 +493,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nr
- real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
+ real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
@@ -515,6 +515,7 @@
  call mpas_pool_get_array(diag_physics,'mu_c'    ,mu_c    )
  call mpas_pool_get_array(diag_physics,'rainprod',rainprod)
  call mpas_pool_get_array(diag_physics,'evapprod',evapprod)
+ call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
  call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
  call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
  call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
@@ -598,6 +599,7 @@
              nr_p(i,k,j) = nr(k,i)
              rainprod_p(i,k,j) = rainprod(k,i)
              evapprod_p(i,k,j) = evapprod(k,i)
+             refl10cm_p(i,k,j) = refl10cm(k,i)
           enddo
           enddo
           enddo
@@ -641,7 +643,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: dtheta_dt_mp
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:),pointer  :: ni,nr
- real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod
+ real(kind=RKIND),dimension(:,:),pointer  :: rainprod,evapprod,refl10cm
  real(kind=RKIND),dimension(:,:),pointer  :: re_cloud,re_ice,re_snow
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
@@ -668,6 +670,7 @@
 
  call mpas_pool_get_array(diag_physics,'rainprod',rainprod)
  call mpas_pool_get_array(diag_physics,'evapprod',evapprod)
+ call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
  call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
  call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
  call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
@@ -779,6 +782,7 @@
              nr(k,i) = nr_p(i,k,j)
              rainprod(k,i) = rainprod_p(i,k,j)
              evapprod(k,i) = evapprod_p(i,k,j)
+             refl10cm(k,i) = refl10cm_p(i,k,j)
           enddo
           enddo
           enddo
