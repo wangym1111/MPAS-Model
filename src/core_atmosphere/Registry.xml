@@ -623,6 +623,9 @@
 			<var name="deriv_two"/>
 			<var name="defc_a"/>
 			<var name="defc_b"/>
+                        <var name="uReconstructZonal"/>
+                        <var name="uReconstructMeridional"/>
+                        <var name="cldfrac"/>
 #ifdef MPAS_CAM_DYCORE
 			<var name="cell_gradient_coef_x"/>
 			<var name="cell_gradient_coef_y"/>
