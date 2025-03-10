@@ -359,6 +359,11 @@ set(ATMOSPHERE_CORE_UTILS_SOURCES
     build_tables.F)
 list(TRANSFORM ATMOSPHERE_CORE_UTILS_SOURCES PREPEND utils/)
 
+set(ATMOSPHERE_CORE_UTILS_SOURCES2
+    atmphys_build_tables_tempo.F
+    build_tables_tempo.F)
+list(TRANSFORM ATMOSPHERE_CORE_UTILS_SOURCES2 PREPEND utils/)
+
 # core_atosphere
 set(ATMOSPHERE_CORE_SOURCES
     mpas_atm_dimensions.F
@@ -432,4 +437,10 @@ add_executable(mpas_atmosphere_build_tables ${ATMOSPHERE_CORE_UTILS_SOURCES})
 target_link_libraries(mpas_atmosphere_build_tables PUBLIC core_atmosphere)
 mpas_fortran_target(mpas_atmosphere_build_tables)
 install(TARGETS mpas_atmosphere_build_tables EXPORT ${PROJECT_NAME}ExportsCore
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+add_executable(mpas_atmosphere_build_tables_tempo ${ATMOSPHERE_CORE_UTILS_SOURCES2})
+target_link_libraries(mpas_atmosphere_build_tables_tempo PUBLIC core_atmosphere)
+mpas_fortran_target(mpas_atmosphere_build_tables_tempo)
+install(TARGETS mpas_atmosphere_build_tables_tempo EXPORT ${PROJECT_NAME}ExportsCore
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
