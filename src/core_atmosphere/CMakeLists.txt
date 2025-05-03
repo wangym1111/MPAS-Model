@@ -126,6 +126,7 @@ set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
     module_mp_tempo_main.F90
     module_mp_tempo_params.F90
     module_mp_tempo_utils.F90
+    module_mp_tempo_ml.F90
     drivers/mpas/module_mp_tempo.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/TEMPO/)
