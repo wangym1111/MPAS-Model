@@ -136,6 +136,7 @@
  !surface precipitation:
  if(.not.allocated(rainnc_p) ) allocate(rainnc_p(ims:ime,jms:jme) )
  if(.not.allocated(rainncv_p)) allocate(rainncv_p(ims:ime,jms:jme))
+ if(.not.allocated(prep_complex)) allocate(prep_complex(ims:ime,jms:jme))
 
  microp_select: select case(trim(microp_scheme))
     case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
@@ -296,6 +297,7 @@
  !surface precipitation:
  if(allocated(rainnc_p) ) deallocate(rainnc_p )
  if(allocated(rainncv_p)) deallocate(rainncv_p)
+ if(allocated(prep_complex)) deallocate(prep_complex)
 
  microp_select: select case(trim(microp_scheme))
     case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
@@ -916,6 +918,7 @@
  do i = its, ite
     rainncv_p(i,j) = 0._RKIND
     rainnc_p(i,j)  = 0._RKIND
+    prep_complex(i,j)  = 0._RKIND
  enddo
  enddo
 
@@ -1003,10 +1006,16 @@
  real(kind=RKIND),dimension(:),pointer:: graupelnc,rainnc,snownc
  real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
  real(kind=RKIND),dimension(:),pointer:: frainnc
+ real(kind=RKIND),dimension(:),pointer:: prep_complex
+ real(kind=RKIND),dimension(:,:),allocatable,save:: precip_timesteps
 
 !local variables and arrays:
  integer:: i,j,k
  real(kind=RKIND):: rho_a
+ integer         :: window_n, window_len
+ real(kind=RKIND):: window_n_tmp
+ logical,save    :: init_precip_timesteps = .false.
+ logical,save    :: alloc_precip_timesteps = .false.
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -1020,9 +1029,25 @@
  call mpas_pool_get_array(diag_physics,'graupelncv',graupelncv)
  call mpas_pool_get_array(diag_physics,'rainnc'    ,rainnc    )
  call mpas_pool_get_array(diag_physics,'rainncv'   ,rainncv   )
+ call mpas_pool_get_array(diag_physics,'precipcom' ,precipcom   )
  call mpas_pool_get_array(diag_physics,'snownc'    ,snownc    )
  call mpas_pool_get_array(diag_physics,'snowncv'   ,snowncv   )
  call mpas_pool_get_array(diag_physics,'sr'        ,sr        )
+ call mpas_pool_get_array(diag_physics,'prep_complex',prep_complex)
+
+ window_len   = 60 * 60 ! min2sec
+ window_n_tmp = window_len/dt_microp
+ window_n = nint(window_n_tmp) + 1
+
+ if ( .not. alloc_precip_timesteps )then
+    allocate(precip_timesteps(window_n,its:ite))
+    alloc_precip_timesteps = .true.
+ end if
+
+ if ( .not. init_precip_timesteps )then
+    precip_timesteps = -999._RKIND
+    init_precip_timesteps = .true.
+ end if
 
  do i = its,ite
     precipw(i) = 0._RKIND
@@ -1044,6 +1069,13 @@
     !accumulated precipitation:
     rainnc(i) = rainnc(i) + rainncv(i)
 
+    ! Collect precipitation at each time step to precip_timesteps every
+    ! hour
+    precip_timesteps(1,i) = rainnc(i)
+    do k = window_n, 1, -1
+       precip_timesteps(k+1,i) = precip_timesteps(k,i)
+    end do
+
    if(l_acrain .and. config_bucket_rainnc.gt.0._RKIND .and. &
       rainnc(i).gt.config_bucket_rainnc) then
       i_rainnc(i) = i_rainnc(i) + 1
@@ -1052,6 +1084,12 @@
 
  enddo
  enddo
+
+ ! Reach the end of each hour
+ if ( minval(precip_timesteps(window_n+1, :)) .gt. -1.0e-6 )then
+      init_precip_timesteps = .false.
+      call compress_prep(precip_timesteps,window_n+1,its,ite,prep_complex)
+ fi
 
 !variables specific to different cloud microphysics schemes:
  microp_select: select case(trim(microp_scheme))
@@ -1107,6 +1145,17 @@
 
  end subroutine precip_to_MPAS
 
+!===================
+ subtourine compress_prep(precip_timesteps,winlen,its,ite,prep_out)
+!===================
+ implicit none
+ ! input arguments:      
+ integer,intent(in):: its,ite,winlen
+ real(kind=RKIND),dimension(1:winlen,its:ite),intent(in) :: precip_timesteps
+ real(kind=RKIND),dimension(its:ite),intent(out)     :: prep_out
+
+ prep_out = precip_timesteps(winlen,:)
+ end subtourine compress_prep
 !=================================================================================================================
  subroutine compute_radar_reflectivity(configs,diag_physics,its,ite)
 !=================================================================================================================
