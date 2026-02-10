@@ -136,7 +136,6 @@
  !surface precipitation:
  if(.not.allocated(rainnc_p) ) allocate(rainnc_p(ims:ime,jms:jme) )
  if(.not.allocated(rainncv_p)) allocate(rainncv_p(ims:ime,jms:jme))
- if(.not.allocated(prep_complex)) allocate(prep_complex(ims:ime,jms:jme))
 
  microp_select: select case(trim(microp_scheme))
     case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
@@ -297,7 +296,6 @@
  !surface precipitation:
  if(allocated(rainnc_p) ) deallocate(rainnc_p )
  if(allocated(rainncv_p)) deallocate(rainncv_p)
- if(allocated(prep_complex)) deallocate(prep_complex)
 
  microp_select: select case(trim(microp_scheme))
     case ("mp_thompson","mp_thompson_aerosols","mp_wsm6")
@@ -918,7 +916,6 @@
  do i = its, ite
     rainncv_p(i,j) = 0._RKIND
     rainnc_p(i,j)  = 0._RKIND
-    prep_complex(i,j)  = 0._RKIND
  enddo
  enddo
 
@@ -1011,6 +1008,7 @@
 
 !local variables and arrays:
  integer:: i,j,k
+ character(len=16) :: desc
  real(kind=RKIND):: rho_a
  integer         :: window_n, window_len
  real(kind=RKIND):: window_n_tmp
@@ -1029,7 +1027,6 @@
  call mpas_pool_get_array(diag_physics,'graupelncv',graupelncv)
  call mpas_pool_get_array(diag_physics,'rainnc'    ,rainnc    )
  call mpas_pool_get_array(diag_physics,'rainncv'   ,rainncv   )
- call mpas_pool_get_array(diag_physics,'precipcom' ,precipcom   )
  call mpas_pool_get_array(diag_physics,'snownc'    ,snownc    )
  call mpas_pool_get_array(diag_physics,'snowncv'   ,snowncv   )
  call mpas_pool_get_array(diag_physics,'sr'        ,sr        )
@@ -1072,7 +1069,7 @@
     ! Collect precipitation at each time step to precip_timesteps every
     ! hour
     precip_timesteps(1,i) = rainnc(i)
-    do k = window_n, 1, -1
+    do k = window_n - 1, 1, -1
        precip_timesteps(k+1,i) = precip_timesteps(k,i)
     end do
 
@@ -1086,10 +1083,10 @@
  enddo
 
  ! Reach the end of each hour
- if ( minval(precip_timesteps(window_n+1, :)) .gt. -1.0e-6 )then
+ if ( minval(precip_timesteps(window_n, :)) .gt. -1.0e-6 )then
       init_precip_timesteps = .false.
-      call compress_prep(precip_timesteps,window_n+1,its,ite,prep_complex)
- fi
+      call compress_prep(precip_timesteps,window_n,its,ite,prep_complex)
+ endif
 
 !variables specific to different cloud microphysics schemes:
  microp_select: select case(trim(microp_scheme))
@@ -1146,7 +1143,7 @@
  end subroutine precip_to_MPAS
 
 !===================
- subtourine compress_prep(precip_timesteps,winlen,its,ite,prep_out)
+ subroutine compress_prep(precip_timesteps,winlen,its,ite,prep_out)
 !===================
  implicit none
  ! input arguments:      
@@ -1154,8 +1151,8 @@
  real(kind=RKIND),dimension(1:winlen,its:ite),intent(in) :: precip_timesteps
  real(kind=RKIND),dimension(its:ite),intent(out)     :: prep_out
 
- prep_out = precip_timesteps(winlen,:)
- end subtourine compress_prep
+ prep_out = precip_timesteps(1,:)
+ end subroutine compress_prep
 !=================================================================================================================
  subroutine compute_radar_reflectivity(configs,diag_physics,its,ite)
 !=================================================================================================================
