@@ -1151,7 +1151,16 @@
  real(kind=RKIND),dimension(1:winlen,its:ite),intent(in) :: precip_timesteps
  real(kind=RKIND),dimension(its:ite),intent(out)     :: prep_out
 
- prep_out = precip_timesteps(1,:)
+ ! local variables
+ real(kind=RKIND),dimension(1:winlen,its:ite) :: preprate
+ integer    :: it
+
+ do it = 1, winlen - 1
+    preprate(winlen-it+1,:) = precip_timesteps(it,:)-precip_timesteps(it+1,:)
+ end do
+ preprate(1,:) = 0.0
+
+ prep_out = maxloc(preprate, dim=1) * dt_microp / 60.0
  end subroutine compress_prep
 !=================================================================================================================
  subroutine compute_radar_reflectivity(configs,diag_physics,its,ite)
