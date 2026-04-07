@@ -140,6 +140,16 @@ set(ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MYNN-EDMF_SOURCES PREPEND physics/MYNN-EDMF/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
+# Read PHYSICS_MMM_REF from Externals.cfg [MMM-physics] section
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/Externals.cfg EXTERNALS_CFG_CONTENT)
+string(REGEX MATCH "\\[MMM-physics\\][^\[]*tag[ \t]*=[ \t]*([^\r\n]+)" _MMM_MATCH "${EXTERNALS_CFG_CONTENT}")
+if(_MMM_MATCH)
+    set(PHYSICS_MMM_REF "${CMAKE_MATCH_1}")
+    string(STRIP "${PHYSICS_MMM_REF}" PHYSICS_MMM_REF)
+    message(STATUS "Read MMM-physics tag from Externals.cfg: ${PHYSICS_MMM_REF}")
+else()
+    message(FATAL_ERROR "Could not find MMM-physics tag in Externals.cfg")
+endif()
 
 if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     set(PHYSICS_MMM_REPO_URL "https://github.com/NCAR/MMM-physics")
@@ -151,8 +161,20 @@ if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
         message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
     endif()
 
+    # Checkout a specific tag or commit
+    execute_process(COMMAND git checkout ${PHYSICS_MMM_REF}
+                    WORKING_DIRECTORY ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR}
+                    RESULT_VARIABLE GIT_CHECKOUT_RESULT
+                    OUTPUT_VARIABLE GIT_CHECKOUT_OUTPUT
+                    ERROR_VARIABLE GIT_CHECKOUT_ERROR)
+    if(NOT GIT_CHECKOUT_RESULT EQUAL 0)
+        message(WARNING
+                "Failed to checkout ${PHYSICS_MMM_REF}, using default branch. "
+                "git error: ${GIT_CHECKOUT_ERROR}")
+    endif()
+
 else()
-    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+    message(STATUS "Directory ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR} already exists, skipping clone")
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES
